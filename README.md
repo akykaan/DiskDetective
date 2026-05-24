@@ -8,9 +8,7 @@ Windows için geliştirilmiş, disk kullanımını görselleştiren bir masaüst
 
 ## Ekran Görüntüsü — Screenshot
 
-```
 ![DiskDetective](screenshot.png)
-```
 
 ---
 
