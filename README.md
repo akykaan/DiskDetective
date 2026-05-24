@@ -9,25 +9,7 @@ Windows için geliştirilmiş, disk kullanımını görselleştiren bir masaüst
 ## Ekran Görüntüsü — Screenshot
 
 ```
-┌──────────────────────────────────────────────────────┐
-│ ─ ☐ ✕  Klasör Boyutu Analiz                         │
-├────────┬──────────┬──────────────────────────────────┤
-│Disk    │Klasör    │ ┌──────────┬──────────────────┐  │
-│Analiz  │Ağacı     │ │ Donut    │ Bar Chart        │  │
-│        │          │ │ Chart    │ ████████ Resim   │  │
-│[Klasör │          │ │  ◯       │ ████     Video   │  │
-│ Seç]   │          │ │   ⬡      │ ██       Kod    │  │
-│        │          │ └──────────┴──────────────────┘  │
-│DISK    │          │ ┌──────────────────────────────┐  │
-│████░░  │          │ │ İsim    Boyut  Dosya  Tür   │  │
-│17 GB   │          │ │ 📁 src  2.1 GB  120   Klasör│  │
-│        │          │ │ 📄 app  500 KB   -    Kod   │  │
-│▼ HIZLI │          │ └──────────────────────────────┘  │
-│ Masaüstü│         │                                   │
-│ Belgeler│         │                                   │
-├────────┴──────────┴──────────────────────────────────┤
-│ Tema: [Koyu▼]  Font: [14px▼]                         │
-└──────────────────────────────────────────────────────┘
+![DiskDetective](screenshot.png)
 ```
 
 ---
