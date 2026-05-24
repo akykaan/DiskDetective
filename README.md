@@ -1,8 +1,8 @@
 # 📁 Klasör Boyutu Analiz — Folder Size Analyzer
 
-**TR:** Windows için geliştirilmiş, disk kullanımını görselleştiren bir masaüstü uygulaması. Klasörlerinizi tarar, boyut dağılımını grafiklerle gösterir.
+Windows için geliştirilmiş, disk kullanımını görselleştiren bir masaüstü uygulaması. Klasörlerinizi tarar, boyut dağılımını grafiklerle gösterir, dosya türlerine göre analiz eder ve genişletilebilir ağaç yapısıyla klasörler arasında gezinmenizi sağlar.
 
-**EN:** A desktop application for Windows that visualizes disk usage. Scans your folders and displays size distribution with interactive charts.
+**Teknik Stack:** Electron 33+ (frameless pencere) · React 18 · TypeScript · Vite 5 · Tailwind CSS · shadcn/ui · Recharts · Zustand · electron-builder
 
 ---
 
