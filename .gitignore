@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-electron/
+release/
+*.exe
+*.msi
+*.dmg
+*.AppImage
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.local

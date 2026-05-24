@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root[data-theme="dark"] {
+    --background: 220 13% 7%;
+    --foreground: 0 0% 95%;
+    --card: 220 13% 11%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 13% 11%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 220 13% 18%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 220 13% 18%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
+    --ring: 239 84% 67%;
+    --radius: 0.5rem;
+
+    --sidebar: 220 13% 9%;
+    --sidebar-foreground: 220 10% 60%;
+
+    --chart-1: 239 84% 67%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 35 92% 55%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 290 70% 65%;
+    --chart-6: 190 80% 50%;
+    --chart-7: 330 80% 60%;
+    --chart-8: 15 85% 55%;
+
+    --titlebar-bg: 220 13% 5%;
+    --disk-free: 142 71% 45%;
+    --disk-warning: 35 92% 55%;
+    --disk-full: 0 84% 60%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  select, select option {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+}
+
+@layer components {
+  .disk-bar-gradient {
+    background: linear-gradient(
+      to right,
+      hsl(var(--disk-free)),
+      hsl(var(--disk-warning)),
+      hsl(var(--disk-full))
+    );
+  }
+
+  .table-row-hover {
+    @apply transition-colors duration-150;
+  }
+
+  .table-row-hover:hover {
+    background: hsl(0 0% 100% / 0.05);
+  }
+}
