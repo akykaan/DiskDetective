@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import path from 'path'
+import fs from 'fs'
 import { scanFolder } from './scanner'
+import { compareFolders } from './comparator'
 
 app.disableHardwareAcceleration()
 
@@ -73,8 +75,41 @@ ipcMain.handle('scan-folder', async (_event, folderPath: string) => {
   return result
 })
 
-ipcMain.handle('open-in-explorer', async (_event, itemPath: string) => {
-  await shell.openPath(itemPath)
+let isCompareCancelled = false
+
+ipcMain.handle('compare-folders', async (_event, leftPath: string, rightPath: string, ignoreUnnecessary: boolean = true) => {
+  isCompareCancelled = false
+  try {
+    const result = await compareFolders(leftPath, rightPath, (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('compare-progress', progress)
+      }
+    }, {
+      ignoreUnnecessary,
+      checkCancel: () => isCompareCancelled
+    })
+    return result
+  } catch (err: any) {
+    if (err.message === 'Cancelled') {
+      return { cancelled: true }
+    }
+    throw err
+  }
+})
+
+ipcMain.on('cancel-compare', () => {
+  isCompareCancelled = true
+})
+
+ipcMain.handle('open-in-explorer', async (_event, itemPaths: string | string[]) => {
+  const paths = Array.isArray(itemPaths) ? itemPaths : [itemPaths]
+  for (const p of paths) {
+    if (fs.existsSync(p)) {
+      shell.showItemInFolder(p)
+      return true
+    }
+  }
+  return false
 })
 
 ipcMain.on('window-control', (_event, action: 'minimize' | 'maximize' | 'close') => {

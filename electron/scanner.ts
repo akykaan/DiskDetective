@@ -4,6 +4,13 @@ import { FileNode, ProgressPayload } from './preload'
 
 const THROTTLE_MS = 300
 
+export const DEFAULT_IGNORE_SET = new Set([
+  'node_modules', '.git', '.vscode', '.idea', 'dist', 'build', 'out',
+  '.next', '.nuxt', '.svelte-kit', 'coverage', 'vendor', 'tmp', 'temp',
+  '.DS_Store', 'Thumbs.db', 'desktop.ini', 'npm-debug.log', 'yarn-error.log', 'pnpm-debug.log',
+  'venv', '.venv', 'env', '.env'
+])
+
 const fileTypeExtensions: Record<string, string[]> = {
   image: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'avif'],
   video: ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v'],
@@ -26,12 +33,17 @@ function detectExtension(filename: string): string {
 
 export async function scanFolder(
   folderPath: string,
-  onProgress: (progress: ProgressPayload) => void
-): Promise<FileNode> {
+  onProgress: (progress: ProgressPayload) => void,
+  options?: {
+    ignoreUnnecessary?: boolean
+    checkCancel?: () => boolean
+  }
+): Promise<{ tree: FileNode; ignoredPaths: string[] }> {
   const startTime = Date.now()
   let scannedFiles = 0
   let totalScannedSize = 0
   let lastThrottleTime = 0
+  const ignoredPaths: string[] = []
 
   const rootName = path.basename(folderPath) || folderPath
 
@@ -56,7 +68,15 @@ export async function scanFolder(
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true })
 
-      const tasks = entries.map(async (entry) => {
+      for (const entry of entries) {
+        if (options?.checkCancel?.()) throw new Error('Cancelled')
+
+        if (options?.ignoreUnnecessary && DEFAULT_IGNORE_SET.has(entry.name)) {
+          // Track relative ignored path
+          ignoredPaths.push(path.join(path.relative(folderPath, dirPath), entry.name).replace(/\\/g, '/'))
+          continue
+        }
+
         const fullPath = path.join(dirPath, entry.name)
 
         try {
@@ -88,9 +108,7 @@ export async function scanFolder(
         } catch {
           scannedFiles++
         }
-      })
-
-      await Promise.all(tasks)
+      }
 
       trySendProgress(dirPath)
     } catch {
@@ -105,12 +123,12 @@ export async function scanFolder(
       modifiedAt: new Date().toISOString(),
       children,
       fileCount,
-      extension: '',
+      extension: 'other',
     }
   }
 
-  const root = await scanRecursive(folderPath)
-  root.name = rootName
+  const tree = await scanRecursive(folderPath)
+  tree.name = rootName
 
   const elapsed = Date.now() - startTime
   onProgress({
@@ -120,5 +138,5 @@ export async function scanFolder(
     elapsedMs: elapsed,
   })
 
-  return root
+  return { tree, ignoredPaths }
 }

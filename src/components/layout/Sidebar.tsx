@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react'
-import { FolderOpen, HardDrive, Home, FileText, Download, Image, Music, Video, ChevronRight } from 'lucide-react'
+import { FolderOpen, HardDrive, Home, FileText, Download, Image, Music, Video, ChevronRight, GitCompareArrows } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useFolderStore } from '@/store/useFolderStore'
+import { useCompareStore } from '@/store/useCompareStore'
 import { formatBytes } from '@/lib/utils'
 
 const quickAccessItems = [
@@ -40,7 +41,7 @@ const Sidebar: React.FC = () => {
         <span className="text-sm font-semibold text-foreground">Disk Analiz</span>
       </div>
 
-      <div className="px-3 pb-3">
+      <div className="px-3 pb-3 space-y-2">
         <Button
           onClick={selectFolder}
           className="w-full gap-2 text-xs"
@@ -48,6 +49,15 @@ const Sidebar: React.FC = () => {
         >
           <FolderOpen size={14} />
           Klasör Seç
+        </Button>
+        <Button
+          onClick={() => useCompareStore.getState().setCompareMode(true)}
+          variant="outline"
+          className="w-full gap-2 text-xs"
+          size="sm"
+        >
+          <GitCompareArrows size={14} />
+          Klasör Karşılaştır
         </Button>
       </div>
 
@@ -143,8 +153,18 @@ const Sidebar: React.FC = () => {
             <option value="14">14px</option>
             <option value="15">15px</option>
             <option value="16">16px</option>
+            <option value="17">17px</option>
+            <option value="18">18px</option>
           </select>
         </div>
+        <button onClick={() => setFontSize(fontSize + 1)}
+          className='w-full text-xs text-foreground border border-border rounded px-1.5 py-1 outline-none focus:border-primary'>
+          A+
+        </button>
+        <button onClick={() => setFontSize(fontSize - 1)}
+          className='w-full text-xs text-foreground border border-border rounded px-1.5 py-1 outline-none focus:border-primary'>
+          A-
+        </button>
       </div>
     </div>
   )

@@ -59,7 +59,7 @@ export const useFolderStore = create<FolderStore>((set, get) => ({
   error: null,
   breadcrumbs: [],
   theme: 'dark',
-  fontSize: 14,
+  fontSize: 16,
   panelsOpen: true,
 
   setRootPath: (path) => set({ rootPath: path }),
