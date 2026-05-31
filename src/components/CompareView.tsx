@@ -160,13 +160,12 @@ const ProgressView: React.FC = () => {
                 <div className={`h-px w-8 ${isDone || isActive ? 'bg-primary' : 'bg-border'}`} />
               )}
               <div
-                className={`h-3 w-3 rounded-full transition-all ${
-                  isActive
+                className={`h-3 w-3 rounded-full transition-all ${isActive
                     ? 'bg-primary animate-pulse scale-125'
                     : isDone
                       ? 'bg-primary'
                       : 'bg-border'
-                }`}
+                  }`}
               />
             </React.Fragment>
           )
@@ -308,7 +307,7 @@ const CompareView: React.FC = () => {
                 </Button>
               )}
             </div>
-            
+
             {!isScanning && (
               <label className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer transition-colors mt-1">
                 <input
@@ -344,11 +343,10 @@ const CompareView: React.FC = () => {
                     <button
                       key={tab.key}
                       onClick={() => setFilter(tab.key)}
-                      className={`px-3 py-1.5 text-[11px] font-medium rounded-md transition-all ${
-                        filter === tab.key
+                      className={`px-3 py-1.5 text-[11px] font-medium rounded-md transition-all ${filter === tab.key
                           ? 'bg-background text-foreground shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                        }`}
                     >
                       {tab.label}
                     </button>

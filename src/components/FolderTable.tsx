@@ -86,14 +86,12 @@ const TableRowItem: React.FC<TableRowItemProps> = ({ node, depth = 0 }) => {
           {formatDate(node.modifiedAt)}
         </TableCell>
       </TableRow>
-      {hasChildren && (
-        <Collapsible open={isExpanded}>
-          <CollapsibleContent>
-            {node.children.map((child) => (
-              <TableRowItem key={child.path} node={child} depth={depth + 1} />
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
+      {hasChildren && isExpanded && (
+        <>
+          {node.children.map((child) => (
+            <TableRowItem key={child.path} node={child} depth={depth + 1} />
+          ))}
+        </>
       )}
     </>
   )

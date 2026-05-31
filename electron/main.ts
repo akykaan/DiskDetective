@@ -72,7 +72,7 @@ ipcMain.handle('scan-folder', async (_event, folderPath: string) => {
       mainWindow.webContents.send('scan-progress', progress)
     }
   })
-  return result
+  return result.tree
 })
 
 let isCompareCancelled = false
