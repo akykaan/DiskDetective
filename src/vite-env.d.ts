@@ -71,8 +71,11 @@ interface ElectronAPI {
   getSystemPath: (name: string) => Promise<string | null>
   onScanProgress: (callback: (data: ProgressPayload) => void) => () => void
   onCompareProgress: (callback: (data: CompareProgress) => void) => () => void
-  openInExplorer: (paths: string | string[]) => Promise<void>
+  openInExplorer: (paths: string | string[]) => Promise<boolean>
   windowControl: (action: 'minimize' | 'maximize' | 'close') => void
+  hashFiles: (paths: string[]) => Promise<Record<string, string>>
+  deleteItems: (paths: string[]) => Promise<boolean>
+  exportData: (data: string, defaultName: string) => Promise<boolean>
 }
 
 interface Window {

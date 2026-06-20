@@ -28,6 +28,10 @@ interface FolderStore {
   fontSize: number
   panelsOpen: boolean
 
+  activeView: 'analyzer' | 'duplicates' | 'old-files'
+  setActiveView: (view: 'analyzer' | 'duplicates' | 'old-files') => void
+  deleteNode: (nodePath: string) => void
+
   setRootPath: (path: string | null) => void
   setTree: (node: FileNode | null) => void
   setSelectedNode: (node: FileNode | null) => void
@@ -60,7 +64,10 @@ export const useFolderStore = create<FolderStore>((set, get) => ({
   breadcrumbs: [],
   theme: 'dark',
   fontSize: 16,
+  activeView: 'analyzer',
   panelsOpen: true,
+
+  setActiveView: (activeView) => set({ activeView }),
 
   setRootPath: (path) => set({ rootPath: path }),
   setTree: (node) => set({ tree: node }),
@@ -91,7 +98,7 @@ export const useFolderStore = create<FolderStore>((set, get) => ({
   setError: (error) => set({ error }),
   setBreadcrumbs: (crumbs) => set({ breadcrumbs: crumbs }),
   setTheme: (theme) => set({ theme }),
-  setFontSize: (size) => set({ fontSize: size }),
+  setFontSize: (size) => set({ fontSize: Math.max(11, Math.min(18, size)) }),
   togglePanels: () => set((state) => ({ panelsOpen: !state.panelsOpen })),
 
   selectFolder: async () => {
@@ -150,5 +157,81 @@ export const useFolderStore = create<FolderStore>((set, get) => ({
 
     const node = dfs(tree)
     if (node) set({ selectedNode: node, selectedPath: node.path })
+  },
+
+  deleteNode: (nodePath: string) => {
+    const { tree, selectedNode } = get()
+    if (!tree) return
+
+    if (tree.path === nodePath) {
+      set({
+        rootPath: null,
+        tree: null,
+        selectedNode: null,
+        selectedPath: null,
+        expandedPaths: new Set(),
+        scanStatus: 'idle',
+        progress: null,
+        error: null,
+        breadcrumbs: [],
+        activeView: 'analyzer'
+      })
+      return
+    }
+
+    const treeCopy = JSON.parse(JSON.stringify(tree)) as FileNode
+
+    function removeRecursive(node: FileNode, targetPath: string): { deletedSize: number; deletedCount: number; found: boolean } {
+      const index = node.children.findIndex(c => c.path === targetPath)
+      if (index !== -1) {
+        const [deletedNode] = node.children.splice(index, 1)
+        const deletedCount = deletedNode.isDirectory ? deletedNode.fileCount : 1
+        node.size -= deletedNode.size
+        node.fileCount = Math.max(0, node.fileCount - deletedCount)
+        return {
+          deletedSize: deletedNode.size,
+          deletedCount,
+          found: true
+        }
+      }
+
+      for (const child of node.children) {
+        if (child.isDirectory) {
+          const res = removeRecursive(child, targetPath)
+          if (res.found) {
+            node.size -= res.deletedSize
+            node.fileCount = Math.max(0, node.fileCount - res.deletedCount)
+            return res
+          }
+        }
+      }
+
+      return { deletedSize: 0, deletedCount: 0, found: false }
+    }
+
+    const result = removeRecursive(treeCopy, nodePath)
+
+    if (result.found) {
+      let nextSelectedNode = selectedNode
+      if (selectedNode?.path === nodePath) {
+        nextSelectedNode = treeCopy
+      } else if (selectedNode) {
+        function findNode(node: FileNode, path: string): FileNode | null {
+          if (node.path === path) return node
+          for (const child of node.children) {
+            const found = findNode(child, path)
+            if (found) return found
+          }
+          return null
+        }
+        nextSelectedNode = findNode(treeCopy, selectedNode.path) || treeCopy
+      }
+
+      set({
+        tree: treeCopy,
+        selectedNode: nextSelectedNode,
+        selectedPath: nextSelectedNode?.path || null
+      })
+    }
   },
 }))

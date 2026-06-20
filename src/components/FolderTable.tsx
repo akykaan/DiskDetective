@@ -1,33 +1,26 @@
 import React, { useState, useMemo, useCallback } from 'react'
-import { ChevronRight, ArrowUp, ArrowDown } from 'lucide-react'
+import { ChevronRight, ArrowUp, ArrowDown, Eye, Trash2 } from 'lucide-react'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import { useFolderStore } from '@/store/useFolderStore'
+import { useI18nStore } from '@/store/useI18nStore'
 import { formatBytes, formatDate, getFileIcon } from '@/lib/utils'
 
 type SortColumn = 'name' | 'size' | 'fileCount' | 'type' | 'modifiedAt'
 type SortDirection = 'asc' | 'desc'
 
-function detectFileType(extension: string): string {
-  const typeMap: Record<string, string> = {
-    image: 'Resim',
-    video: 'Video',
-    audio: 'Ses',
-    archive: 'Arşiv',
-    code: 'Kod',
-    document: 'Belge',
-    executable: 'Çalıştırılabilir',
-    font: 'Font',
-  }
-  return typeMap[extension] || extension.toUpperCase() || 'Diğer'
+function detectFileType(extension: string, t: any): string {
+  const label = t(`file_type_map.${extension}`)
+  if (label !== `file_type_map.${extension}`) return label
+  return extension.toUpperCase() || t('file_type_map.other')
 }
 
-function getSortValue(node: FileNode, col: SortColumn): string | number {
+function getSortValue(node: FileNode, col: SortColumn, t: any): string | number {
   switch (col) {
     case 'name': return node.name.toLowerCase()
     case 'size': return node.size
     case 'fileCount': return node.isDirectory ? node.fileCount : -1
-    case 'type': return node.isDirectory ? '0' : detectFileType(node.extension)
+    case 'type': return node.isDirectory ? '0' : detectFileType(node.extension, t)
     case 'modifiedAt': return node.modifiedAt
   }
 }
@@ -39,6 +32,7 @@ interface TableRowItemProps {
 
 const TableRowItem: React.FC<TableRowItemProps> = ({ node, depth = 0 }) => {
   const { expandedPaths, toggleExpanded, selectedNode } = useFolderStore()
+  const { t } = useI18nStore()
   const isExpanded = expandedPaths.has(node.path)
   const isSelected = selectedNode?.path === node.path
   const hasChildren = node.children.length > 0
@@ -76,14 +70,43 @@ const TableRowItem: React.FC<TableRowItemProps> = ({ node, depth = 0 }) => {
         <TableCell className="py-2 text-xs text-right font-mono tabular-nums w-[100px]">
           {formatBytes(node.size)}
         </TableCell>
-        <TableCell className="py-2 text-xs text-muted-foreground w-[70px] text-right">
+        <TableCell className="py-2 text-xs text-muted-foreground w-[70px] text-right font-mono">
           {node.isDirectory ? node.fileCount.toLocaleString() : '-'}
         </TableCell>
         <TableCell className="py-2 text-xs text-muted-foreground w-[90px]">
-          {node.isDirectory ? 'Klasör' : detectFileType(node.extension)}
+          {node.isDirectory ? t('folder') : detectFileType(node.extension, t)}
         </TableCell>
         <TableCell className="py-2 text-xs text-muted-foreground w-[100px]">
           {formatDate(node.modifiedAt)}
+        </TableCell>
+        <TableCell className="py-2 text-center w-[80px]" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={() => window.electronAPI.openInExplorer(node.path)}
+              className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+              title={t('show_in_explorer')}
+            >
+              <Eye size={12} />
+            </button>
+            <button
+              onClick={async () => {
+                const message = t('delete_confirm', {
+                  name: node.name,
+                  type: node.isDirectory ? t('folder') : t('file_lower')
+                })
+                if (confirm(message)) {
+                  const success = await window.electronAPI.deleteItems([node.path])
+                  if (success) {
+                    useFolderStore.getState().deleteNode(node.path)
+                  }
+                }
+              }}
+              className="p-1 hover:bg-destructive/15 rounded text-muted-foreground hover:text-destructive transition-colors"
+              title={t('delete')}
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
         </TableCell>
       </TableRow>
       {hasChildren && isExpanded && (
@@ -99,16 +122,18 @@ const TableRowItem: React.FC<TableRowItemProps> = ({ node, depth = 0 }) => {
 
 type SortConfig = { column: SortColumn; direction: SortDirection }
 
-const columns: { key: SortColumn; label: string; align?: 'left' | 'right'; width: string }[] = [
-  { key: 'name', label: 'İsim', width: 'w-[100px]' },
-  { key: 'size', label: 'Boyut', align: 'right', width: 'w-[100px]' },
-  { key: 'fileCount', label: 'Dosya', align: 'right', width: 'w-[70px]' },
-  { key: 'type', label: 'Tür', width: 'w-[90px]' },
-  { key: 'modifiedAt', label: 'Değiştirilme', width: 'w-[100px]' },
+const columns: { key: SortColumn | 'actions'; labelKey: string; align?: 'left' | 'right' | 'center'; width: string }[] = [
+  { key: 'name', labelKey: 'name', width: 'w-[100px]' },
+  { key: 'size', labelKey: 'size', align: 'right', width: 'w-[100px]' },
+  { key: 'fileCount', labelKey: 'file', align: 'right', width: 'w-[70px]' },
+  { key: 'type', labelKey: 'type', width: 'w-[90px]' },
+  { key: 'modifiedAt', labelKey: 'modified', width: 'w-[100px]' },
+  { key: 'actions', labelKey: 'actions', align: 'center', width: 'w-[80px]' },
 ]
 
 const FolderTable: React.FC = () => {
   const { selectedNode, scanStatus } = useFolderStore()
+  const { t } = useI18nStore()
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: 'name', direction: 'asc' })
 
   const handleSort = useCallback((col: SortColumn) => {
@@ -128,8 +153,8 @@ const FolderTable: React.FC = () => {
     const files = selectedNode.children.filter((c) => !c.isDirectory)
 
     const sortFn = (a: FileNode, b: FileNode) => {
-      const va = getSortValue(a, sortColumn)
-      const vb = getSortValue(b, sortColumn)
+      const va = getSortValue(a, sortColumn, t)
+      const vb = getSortValue(b, sortColumn, t)
       let cmp = 0
       if (typeof va === 'number' && typeof vb === 'number') {
         cmp = va - vb
@@ -142,12 +167,12 @@ const FolderTable: React.FC = () => {
     dirs.sort(sortFn)
     files.sort(sortFn)
     return [...dirs, ...files]
-  }, [selectedNode, sortColumn, sortDirection])
+  }, [selectedNode, sortColumn, sortDirection, t])
 
   if (scanStatus === 'idle') {
     return (
       <div className="flex items-center justify-center h-40 text-xs text-muted-foreground">
-        Henüz bir klasör seçilmedi
+        {t('not_selected')}
       </div>
     )
   }
@@ -162,15 +187,16 @@ const FolderTable: React.FC = () => {
             {columns.map((col) => {
               const isActive = sortColumn === col.key
               const Icon = isActive ? (sortDirection === 'asc' ? ArrowUp : ArrowDown) : ArrowUp
+              const isActions = col.key === 'actions'
               return (
                 <TableHead
                   key={col.key}
-                  className={`text-[11px] font-medium cursor-pointer select-none hover:text-foreground transition-colors ${col.align === 'right' ? 'text-right' : ''} ${col.width}`}
-                  onClick={() => handleSort(col.key)}
+                  className={`text-[11px] font-medium select-none transition-colors ${isActions ? 'text-center' : 'cursor-pointer hover:text-foreground'} ${col.align === 'right' ? 'text-right' : ''} ${col.align === 'center' ? 'text-center' : ''} ${col.width}`}
+                  onClick={() => !isActions && handleSort(col.key as SortColumn)}
                 >
-                  <span className={`inline-flex items-center gap-1 ${col.align === 'right' ? 'justify-end' : ''}`}>
-                    {col.label}
-                    <Icon size={11} className={isActive ? 'text-primary' : 'text-muted-foreground/30'} />
+                  <span className={`inline-flex items-center gap-1 ${col.align === 'right' ? 'justify-end' : ''} ${col.align === 'center' ? 'justify-center' : ''}`}>
+                    {t(col.labelKey)}
+                    {!isActions && <Icon size={11} className={isActive ? 'text-primary' : 'text-muted-foreground/30'} />}
                   </span>
                 </TableHead>
               )
@@ -185,7 +211,7 @@ const FolderTable: React.FC = () => {
       </Table>
       {sortedChildren.length === 0 && (
         <div className="flex items-center justify-center h-20 text-xs text-muted-foreground">
-          Bu klasör boş
+          {t('empty_folder')}
         </div>
       )}
     </div>

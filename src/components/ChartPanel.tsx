@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useFolderStore } from '@/store/useFolderStore'
+import { useI18nStore } from '@/store/useI18nStore'
 import { formatBytes } from '@/lib/utils'
 
 const CHART_COLORS = [
@@ -59,19 +60,8 @@ function aggregateBySize(node: FileNode): SizeEntry[] {
     .filter((e) => e.value > 0)
 }
 
-function aggregateByType(node: FileNode): TypeEntry[] {
+function aggregateByType(node: FileNode, t: any): TypeEntry[] {
   const typeTotals: Record<string, number> = {}
-
-  const typeLabels: Record<string, string> = {
-    image: 'Resim',
-    video: 'Video',
-    audio: 'Ses',
-    archive: 'Arşiv',
-    code: 'Kod',
-    document: 'Belge',
-    executable: 'Çalıştırılabilir',
-    font: 'Font',
-  }
 
   function walk(n: FileNode) {
     if (!n.isDirectory) {
@@ -88,11 +78,14 @@ function aggregateByType(node: FileNode): TypeEntry[] {
   return Object.entries(typeTotals)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 8)
-    .map(([ext, size], i) => ({
-      type: typeLabels[ext] || ext.toUpperCase(),
-      size,
-      color: CHART_COLORS[i % CHART_COLORS.length],
-    }))
+    .map(([ext, size], i) => {
+      const label = t(`file_type_map.${ext}`)
+      return {
+        type: label !== `file_type_map.${ext}` ? label : ext.toUpperCase(),
+        size,
+        color: CHART_COLORS[i % CHART_COLORS.length],
+      }
+    })
 }
 
 interface CustomTooltipProps {
@@ -113,27 +106,28 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
 
 const ChartPanel: React.FC = () => {
   const { tree, scanStatus } = useFolderStore()
+  const { t } = useI18nStore()
 
   const sizeData = useMemo(() => (tree ? aggregateBySize(tree) : []), [tree])
-  const typeData = useMemo(() => (tree ? aggregateByType(tree) : []), [tree])
+  const typeData = useMemo(() => (tree ? aggregateByType(tree, t) : []), [tree, t])
 
   if (scanStatus === 'idle' || !tree) {
     return (
       <div className="grid grid-cols-2 gap-3">
         <Card className="bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium">Boyuta Göre Dağılım</CardTitle>
+            <CardTitle className="text-xs font-medium">{t('chart_title')}</CardTitle>
           </CardHeader>
           <CardContent className="h-[200px] flex items-center justify-center">
-            <span className="text-xs text-muted-foreground">Veri yok</span>
+            <span className="text-xs text-muted-foreground">{t('chart_no_data')}</span>
           </CardContent>
         </Card>
         <Card className="bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium">Dosya Türüne Göre Dağılım</CardTitle>
+            <CardTitle className="text-xs font-medium">{t('chart_type_title')}</CardTitle>
           </CardHeader>
           <CardContent className="h-[200px] flex items-center justify-center">
-            <span className="text-xs text-muted-foreground">Veri yok</span>
+            <span className="text-xs text-muted-foreground">{t('chart_no_data')}</span>
           </CardContent>
         </Card>
       </div>
@@ -144,7 +138,7 @@ const ChartPanel: React.FC = () => {
     <div className="grid grid-cols-2 gap-3">
       <Card className="bg-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-xs font-medium">Boyuta Göre Dağılım</CardTitle>
+          <CardTitle className="text-xs font-medium">{t('chart_title')}</CardTitle>
         </CardHeader>
         <CardContent className="h-[220px]">
           <div className="flex h-full items-center gap-2">
@@ -168,14 +162,14 @@ const ChartPanel: React.FC = () => {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 font-mono">
               {sizeData.map((entry, i) => (
                 <div key={i} className="flex items-center gap-2 text-[11px]">
                   <span
                     className="h-2.5 w-2.5 rounded-sm shrink-0"
                     style={{ backgroundColor: entry.color }}
                   />
-                  <span className="text-muted-foreground">{entry.name}</span>
+                  <span className="text-muted-foreground font-sans">{entry.name}</span>
                   <span className="text-foreground/70 font-medium">{entry.value}</span>
                 </div>
               ))}
@@ -186,7 +180,7 @@ const ChartPanel: React.FC = () => {
 
       <Card className="bg-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-xs font-medium">Dosya Türüne Göre Dağılım</CardTitle>
+          <CardTitle className="text-xs font-medium">{t('chart_type_title')}</CardTitle>
         </CardHeader>
         <CardContent className="h-[220px]">
           <ResponsiveContainer width="100%" height="100%">

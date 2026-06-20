@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useCompareStore, DiffFilter } from '@/store/useCompareStore'
+import { useI18nStore } from '@/store/useI18nStore'
 import { formatDuration, formatBytes } from '@/lib/utils'
 import DiffSummary from '@/components/DiffSummary'
 import DiffTable from '@/components/DiffTable'
@@ -24,13 +25,13 @@ import DiffTable from '@/components/DiffTable'
 /*  Filter tabs                                                        */
 /* ------------------------------------------------------------------ */
 
-const FILTER_TABS: { key: DiffFilter; label: string }[] = [
-  { key: 'all', label: 'Tümü' },
-  { key: 'only-left', label: 'Sadece Sol' },
-  { key: 'only-right', label: 'Sadece Sağ' },
-  { key: 'size-diff', label: 'Boyut Farklı' },
-  { key: 'identical', label: 'Aynı' },
-]
+const FILTER_TABS: { key: DiffFilter; labelKey: string }[] = [
+  { key: 'all', labelKey: 'all' },
+  { key: 'only-left', labelKey: 'only_left' },
+  { key: 'only-right', labelKey: 'only_right' },
+  { key: 'size-diff', labelKey: 'size_diff' },
+  { key: 'identical', labelKey: 'identical' },
+ ]
 
 /* ------------------------------------------------------------------ */
 /*  Folder picker card                                                 */
@@ -44,29 +45,32 @@ interface FolderPickerProps {
   accentColor: string
 }
 
-const FolderPicker: React.FC<FolderPickerProps> = ({ label, path, onSelect, accentColor }) => (
-  <button
-    onClick={onSelect}
-    className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border p-5 transition-all hover:border-primary/50 hover:bg-primary/[0.02] group cursor-pointer"
-  >
-    <div
-      className="flex h-10 w-10 items-center justify-center rounded-full transition-colors"
-      style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+const FolderPicker: React.FC<FolderPickerProps> = ({ label, path, onSelect, accentColor }) => {
+  const { t } = useI18nStore()
+  return (
+    <button
+      onClick={onSelect}
+      className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border p-5 transition-all hover:border-primary/50 hover:bg-primary/[0.02] group cursor-pointer"
     >
-      <FolderOpen size={20} className="group-hover:scale-110 transition-transform" />
-    </div>
-    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-      {label}
-    </span>
-    {path ? (
-      <span className="text-xs text-foreground font-medium truncate max-w-[300px]" title={path}>
-        {path}
+      <div
+        className="flex h-10 w-10 items-center justify-center rounded-full transition-colors"
+        style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+      >
+        <FolderOpen size={20} className="group-hover:scale-110 transition-transform" />
+      </div>
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        {label}
       </span>
-    ) : (
-      <span className="text-xs text-muted-foreground/60">Klasör seçmek için tıklayın</span>
-    )}
-  </button>
-)
+      {path ? (
+        <span className="text-xs text-foreground font-medium truncate max-w-[300px]" title={path}>
+          {path}
+        </span>
+      ) : (
+        <span className="text-xs text-muted-foreground/60">{t('click_to_select')}</span>
+      )}
+    </button>
+  )
+}
 
 /* ------------------------------------------------------------------ */
 /*  Progress indicator                                                 */
@@ -74,42 +78,41 @@ const FolderPicker: React.FC<FolderPickerProps> = ({ label, path, onSelect, acce
 
 const ProgressView: React.FC = () => {
   const { compareStatus, compareProgress } = useCompareStore()
+  const { t } = useI18nStore()
 
   const phaseLabel =
     compareStatus === 'scanning-left'
-      ? 'Sol klasör taranıyor...'
+      ? t('left_scanning')
       : compareStatus === 'scanning-right'
-        ? 'Sağ klasör taranıyor...'
-        : 'Karşılaştırılıyor...'
+        ? t('right_scanning')
+        : t('comparing_in_progress')
 
   const progressText = (() => {
     if (!compareProgress) return null
 
     if (compareProgress.phase === 'comparing') {
-      // During comparing: show scanned / total
       return (
         <>
           <p className="text-xs text-muted-foreground">
-            Taranan dosya: <span className="text-foreground font-medium">{compareProgress.scannedFiles.toLocaleString()}</span>
+            {t('files_scanned_label')}: <span className="text-foreground font-medium">{compareProgress.scannedFiles.toLocaleString()}</span>
             {' / '}
-            Toplam dosya: <span className="text-foreground font-medium">{compareProgress.totalFiles.toLocaleString()}</span>
+            {t('total_files_label')}: <span className="text-foreground font-medium">{compareProgress.totalFiles.toLocaleString()}</span>
           </p>
-          <p className="text-[11px] text-muted-foreground/70 mt-0.5">
-            Toplam boyut: {formatBytes(compareProgress.totalSize)} • {formatDuration(compareProgress.elapsedMs)}
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5 font-mono">
+            {t('total_size_label')}: {formatBytes(compareProgress.totalSize)} • {formatDuration(compareProgress.elapsedMs)}
           </p>
         </>
       )
     }
 
-    // During scanning phases: show scanned files + total size
     return (
       <>
         <p className="text-xs text-muted-foreground">
-          Taranan dosya: <span className="text-foreground font-medium">{compareProgress.scannedFiles.toLocaleString()}</span>
+          {t('files_scanned_label')}: <span className="text-foreground font-medium">{compareProgress.scannedFiles.toLocaleString()}</span>
           {' • '}
-          Toplam boyut: <span className="text-foreground font-medium">{formatBytes(compareProgress.totalSize)}</span>
+          {t('total_size_label')}: <span className="text-foreground font-medium">{formatBytes(compareProgress.totalSize)}</span>
         </p>
-        <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+        <p className="text-[11px] text-muted-foreground/70 mt-0.5 font-mono">
           {formatDuration(compareProgress.elapsedMs)}
         </p>
       </>
@@ -134,7 +137,6 @@ const ProgressView: React.FC = () => {
         )}
       </div>
 
-      {/* Progress bar for comparing phase */}
       {compareProgress?.phase === 'comparing' && compareProgress.totalFiles > 0 && (
         <div className="w-64 h-1.5 rounded-full bg-secondary overflow-hidden">
           <div
@@ -172,9 +174,9 @@ const ProgressView: React.FC = () => {
         })}
       </div>
       <div className="flex gap-16 text-[10px] text-muted-foreground mt-1">
-        <span>Sol Tarama</span>
-        <span>Sağ Tarama</span>
-        <span>Karşılaştır</span>
+        <span>{t('left_scan_dot')}</span>
+        <span>{t('right_scan_dot')}</span>
+        <span>{t('compare_dot')}</span>
       </div>
     </div>
   )
@@ -204,6 +206,7 @@ const CompareView: React.FC = () => {
     reset,
     cancel,
   } = useCompareStore()
+  const { t } = useI18nStore()
 
   const isScanning = compareStatus === 'scanning-left' || compareStatus === 'scanning-right' || compareStatus === 'comparing'
   const canCompare = !!leftPath && !!rightPath && !isScanning
@@ -229,17 +232,17 @@ const CompareView: React.FC = () => {
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft size={13} />
-            <span>Geri</span>
+            <span>{t('back')}</span>
           </button>
           <span className="w-px h-4 bg-border" />
           <GitCompareArrows size={14} className="text-primary" />
-          <span className="text-xs font-medium text-foreground">Klasör Karşılaştırma</span>
+          <span className="text-xs font-medium text-foreground">{t('folder_comparison')}</span>
         </div>
 
         {compareResult && (
-          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono">
             <span>
-              {compareResult.summary.totalFiles.toLocaleString()} dosya karşılaştırıldı
+              {t('compare_summary', { count: compareResult.summary.totalFiles.toLocaleString() })}
             </span>
             <span className="w-px h-3 bg-border" />
             <span>{formatDuration(compareResult.elapsedMs)}</span>
@@ -252,7 +255,7 @@ const CompareView: React.FC = () => {
           {/* Folder pickers */}
           <div className="flex gap-3 items-stretch">
             <FolderPicker
-              label="Sol Klasör (A)"
+              label={t('left_folder')}
               side="left"
               path={leftPath}
               onSelect={selectLeftFolder}
@@ -266,7 +269,7 @@ const CompareView: React.FC = () => {
             </div>
 
             <FolderPicker
-              label="Sağ Klasör (B)"
+              label={t('right_folder')}
               side="right"
               path={rightPath}
               onSelect={selectRightFolder}
@@ -286,24 +289,24 @@ const CompareView: React.FC = () => {
                 {isScanning ? (
                   <>
                     <Loader2 size={14} className="animate-spin" />
-                    Karşılaştırılıyor...
+                    {t('comparing_in_progress')}
                   </>
                 ) : (
                   <>
                     <Search size={14} />
-                    Karşılaştır
+                    {t('compare_button')}
                   </>
                 )}
               </Button>
               {isScanning && (
                 <Button onClick={cancel} variant="destructive" size="sm" className="gap-1.5 text-xs">
                   <XCircle size={14} />
-                  İptal Et
+                  {t('cancel_button')}
                 </Button>
               )}
               {(compareResult || leftPath || rightPath) && !isScanning && (
                 <Button onClick={reset} variant="outline" size="sm" className="text-xs">
-                  Sıfırla
+                  {t('reset_button')}
                 </Button>
               )}
             </div>
@@ -316,7 +319,7 @@ const CompareView: React.FC = () => {
                   onChange={(e) => setIgnoreUnnecessary(e.target.checked)}
                   className="rounded border-border bg-background text-primary focus:ring-1 focus:ring-primary focus:ring-offset-0"
                 />
-                Gereksiz dosya ve klasörleri atla (node_modules, .git, vb.)
+                {t('ignore_unnecessary')}
               </label>
             )}
           </div>
@@ -348,7 +351,7 @@ const CompareView: React.FC = () => {
                           : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
-                      {tab.label}
+                      {t(`diff_tabs.${tab.labelKey}`)}
                     </button>
                   ))}
                 </div>
@@ -360,10 +363,10 @@ const CompareView: React.FC = () => {
                   />
                   <input
                     type="text"
-                    placeholder="Dosya ara..."
+                    placeholder={t('search_placeholder')}
                     value={searchQuery}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full rounded-md border border-border bg-background pl-8 pr-3 py-1.5 text-xs outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/50"
+                    className="w-full rounded-md border border-border bg-background pl-8 pr-3 py-1.5 text-xs outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/40"
                   />
                 </div>
               </div>
@@ -388,11 +391,11 @@ const CompareView: React.FC = () => {
                         <span className="p-1.5 rounded-md bg-muted/50 text-muted-foreground">
                           <Ban size={12} />
                         </span>
-                        <span className="font-medium text-sm text-foreground">Taranmayan Dosyalar</span>
+                        <span className="font-medium text-sm text-foreground">{t('unscanned_files')}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground">{compareResult.ignoredPaths.length} öğe atlandı</span>
+                      <span className="text-xs text-muted-foreground">{t('items_skipped', { count: compareResult.ignoredPaths.length })}</span>
                     </div>
                   </button>
                   {isIgnoredOpen && (
@@ -400,10 +403,10 @@ const CompareView: React.FC = () => {
                       <ul className="text-xs font-mono text-muted-foreground space-y-1">
                         {compareResult.ignoredPaths.map((p, idx) => (
                           <li
-                            key={idx}
-                            className="truncate cursor-pointer hover:text-foreground hover:bg-muted/50 px-2 py-1 rounded transition-colors"
-                            title={p}
-                            onClick={() => handleOpenIgnoredFile(p)}
+                              key={idx}
+                              className="truncate cursor-pointer hover:text-foreground hover:bg-muted/50 px-2 py-1 rounded transition-colors"
+                              title={p}
+                              onClick={() => handleOpenIgnoredFile(p)}
                           >
                             {p}
                           </li>
@@ -423,11 +426,10 @@ const CompareView: React.FC = () => {
                 <GitCompareArrows size={28} className="text-muted-foreground/60" />
               </div>
               <p className="text-sm text-muted-foreground mb-1">
-                İki klasörü karşılaştırarak farkları bulun
+                {t('empty_compare_title')}
               </p>
               <p className="text-xs text-muted-foreground/60 max-w-[400px]">
-                Birebir aynı olması gereken iki klasör arasındaki eksik dosyaları,
-                boyut farklılıklarını ve fazla dosyaları tespit edin.
+                {t('empty_compare_desc')}
               </p>
             </div>
           )}

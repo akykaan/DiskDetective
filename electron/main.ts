@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import path from 'path'
 import fs from 'fs'
+import crypto from 'crypto'
 import { scanFolder } from './scanner'
 import { compareFolders } from './comparator'
 
@@ -110,6 +111,79 @@ ipcMain.handle('open-in-explorer', async (_event, itemPaths: string | string[]) 
     }
   }
   return false
+})
+
+ipcMain.handle('hash-files', async (_event, filePaths: string[]) => {
+  const hashes: Record<string, string> = {}
+  
+  const computeHash = (p: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const hash = crypto.createHash('md5')
+      const stream = fs.createReadStream(p)
+      stream.on('data', (data) => hash.update(data))
+      stream.on('end', () => resolve(hash.digest('hex')))
+      stream.on('error', () => resolve(''))
+    })
+  }
+
+  const chunkSize = 5
+  for (let i = 0; i < filePaths.length; i += chunkSize) {
+    const chunk = filePaths.slice(i, i + chunkSize)
+    const results = await Promise.all(chunk.map(async (p) => {
+      if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+        try {
+          const h = await computeHash(p)
+          return { path: p, hash: h }
+        } catch {
+          return { path: p, hash: '' }
+        }
+      }
+      return { path: p, hash: '' }
+    }))
+    for (const r of results) {
+      if (r.hash) {
+        hashes[r.path] = r.hash
+      }
+    }
+  }
+
+  return hashes
+})
+
+ipcMain.handle('delete-items', async (_event, paths: string[]) => {
+  let successCount = 0
+  for (const p of paths) {
+    if (fs.existsSync(p)) {
+      try {
+        await shell.trashItem(p)
+        successCount++
+      } catch (err) {
+        console.error(`Failed to trash item ${p}:`, err)
+      }
+    }
+  }
+  return successCount === paths.length
+})
+
+ipcMain.handle('export-data', async (_event, data: string, defaultName: string) => {
+  const extension = path.extname(defaultName).replace('.', '')
+  const result = await dialog.showSaveDialog(mainWindow!, {
+    defaultPath: defaultName,
+    filters: [
+      { name: extension.toUpperCase(), extensions: [extension] },
+      { name: 'Tüm Dosyalar', extensions: ['*'] }
+    ]
+  })
+  if (result.canceled || !result.filePath) {
+    return false
+  }
+  try {
+    await fs.promises.writeFile(result.filePath, data, 'utf-8')
+    return true
+  } catch (err) {
+    console.error('Failed to export data:', err)
+    return false
+  }
 })
 
 ipcMain.on('window-control', (_event, action: 'minimize' | 'maximize' | 'close') => {

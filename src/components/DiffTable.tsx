@@ -2,39 +2,40 @@ import React, { useMemo, useCallback, useState } from 'react'
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Equal, AlertTriangle, ChevronDown, ChevronRight, Folder } from 'lucide-react'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
 import { useCompareStore, DiffSortColumn } from '@/store/useCompareStore'
+import { useI18nStore } from '@/store/useI18nStore'
 import { formatBytes, getFileIcon } from '@/lib/utils'
 
 /* ------------------------------------------------------------------ */
 /*  Status badge                                                       */
 /* ------------------------------------------------------------------ */
 
-const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; bg: string; text: string }> = {
+const STATUS_CONFIG: Record<string, { labelKey: string; icon: React.ReactNode; bg: string; text: string }> = {
   'only-left': {
-    label: 'Sadece Sol (A Klasörü)',
+    labelKey: 'only_left_badge_desc',
     icon: <ArrowLeft size={10} />,
     bg: 'bg-red-500/10',
     text: 'text-red-500',
   },
   'only-right': {
-    label: 'Sadece Sağ (B Klasörü)',
+    labelKey: 'only_right_badge_desc',
     icon: <ArrowRight size={10} />,
     bg: 'bg-blue-500/10',
     text: 'text-blue-500',
   },
   'size-diff': {
-    label: 'Boyut Farklı',
+    labelKey: 'diff_tabs.size_diff',
     icon: <AlertTriangle size={10} />,
     bg: 'bg-amber-500/10',
     text: 'text-amber-500',
   },
   'date-diff': {
-    label: 'Tarih Farklı',
+    labelKey: 'date_diff',
     icon: <AlertTriangle size={10} />,
     bg: 'bg-orange-500/10',
     text: 'text-orange-500',
   },
   identical: {
-    label: 'Aynı',
+    labelKey: 'diff_tabs.identical',
     icon: <Equal size={10} />,
     bg: 'bg-emerald-500/10',
     text: 'text-emerald-500',
@@ -42,13 +43,14 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; bg: 
 }
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const { t } = useI18nStore()
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.identical
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${config.bg} ${config.text}`}
     >
       {config.icon}
-      {config.label}
+      {t(config.labelKey)}
     </span>
   )
 }
@@ -87,12 +89,12 @@ function getRowBg(status: string): string {
   }
 }
 
-const columns: { key: DiffSortColumn; label: string; align?: 'left' | 'right'; width: string }[] = [
-  { key: 'name', label: 'Dosya Yolu', width: 'min-w-[280px]' },
-  { key: 'leftSize', label: 'Sol Boyut', align: 'right', width: 'w-[100px]' },
-  { key: 'rightSize', label: 'Sağ Boyut', align: 'right', width: 'w-[100px]' },
-  { key: 'sizeDiff', label: 'Fark', align: 'right', width: 'w-[100px]' },
-  { key: 'status', label: 'Durum', width: 'w-[110px]' },
+const columns: { key: DiffSortColumn; labelKey: string; align?: 'left' | 'right'; width: string }[] = [
+  { key: 'name', labelKey: 'path', width: 'min-w-[280px]' },
+  { key: 'leftSize', labelKey: 'left_size', align: 'right', width: 'w-[100px]' },
+  { key: 'rightSize', labelKey: 'right_size', align: 'right', width: 'w-[100px]' },
+  { key: 'sizeDiff', labelKey: 'difference', align: 'right', width: 'w-[100px]' },
+  { key: 'status', labelKey: 'status', width: 'w-[110px]' },
 ]
 
 /* ------------------------------------------------------------------ */
@@ -243,6 +245,7 @@ interface CollapsibleSectionProps {
 }
 
 const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ status, entries, sortColumn, sortDirection, handleSort, onFileClick }) => {
+  const { t } = useI18nStore()
   const [isOpen, setIsOpen] = useState(status !== 'identical')
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
 
@@ -277,11 +280,11 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ status, entries
             <span className={`p-1.5 rounded-md ${config.bg} ${config.text}`}>
               {config.icon}
             </span>
-            <span className="font-medium text-sm text-foreground">{config.label}</span>
+            <span className="font-medium text-sm text-foreground">{t(config.labelKey)}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">{entries.length} dosya</span>
+          <span className="text-xs text-muted-foreground">{entries.length} {t('files_scanned_count')}</span>
         </div>
       </button>
 
@@ -300,7 +303,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ status, entries
                       onClick={() => handleSort(col.key)}
                     >
                       <span className={`inline-flex items-center gap-1 ${col.align === 'right' ? 'justify-end' : ''}`}>
-                        {col.label}
+                        {t(col.labelKey)}
                         <Icon size={11} className={isActive ? 'text-primary' : 'text-muted-foreground/30'} />
                       </span>
                     </TableHead>
@@ -383,6 +386,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ status, entries
 
 const DiffTable: React.FC = () => {
   const { compareResult, filter, searchQuery, sortColumn, sortDirection, setSort } = useCompareStore()
+  const { t } = useI18nStore()
 
   const handleOpenFile = useCallback(
     (entry: any) => {
@@ -456,15 +460,15 @@ const DiffTable: React.FC = () => {
       {filteredAndSorted.length === 0 && (
         <div className="flex items-center justify-center h-32 text-xs text-muted-foreground border border-dashed border-border rounded-lg">
           {filter !== 'all' || searchQuery
-            ? 'Filtre kriterlerine uygun sonuç bulunamadı'
-            : 'Karşılaştırma sonuçları burada görünecek'}
+            ? t('no_comparison_results')
+            : t('comparison_results_placeholder')}
         </div>
       )}
       
       {filteredAndSorted.length > 0 && (
         <div className="flex items-center justify-between px-3 py-2 mt-4 text-[11px] text-muted-foreground">
-          <span>{filteredAndSorted.length} dosya listelendi</span>
-          <span>Toplam: {compareResult.summary.totalFiles} taranan dosya</span>
+          <span>{t('files_listed_count', { count: filteredAndSorted.length })}</span>
+          <span>{t('total_compare_summary', { count: compareResult.summary.totalFiles })}</span>
         </div>
       )}
     </div>

@@ -7,6 +7,8 @@ import FolderTree from '@/components/FolderTree'
 import FolderTable from '@/components/FolderTable'
 import ChartPanel from '@/components/ChartPanel'
 import CompareView from '@/components/CompareView'
+import DuplicateFinder from '@/components/DuplicateFinder'
+import OldFileDetective from '@/components/OldFileDetective'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useFolderStore } from '@/store/useFolderStore'
 import { useCompareStore } from '@/store/useCompareStore'
@@ -18,6 +20,7 @@ const App: React.FC = () => {
   const panelsOpen = useFolderStore((s) => s.panelsOpen)
   const togglePanels = useFolderStore((s) => s.togglePanels)
   const isCompareMode = useCompareStore((s) => s.isCompareMode)
+  const activeView = useFolderStore((s) => s.activeView)
 
   React.useEffect(() => {
     setTheme(theme as any)
@@ -67,24 +70,26 @@ const App: React.FC = () => {
 
           <div className="flex flex-1 flex-col overflow-hidden">
             <TopBar />
-            <div className="flex flex-1 gap-3 overflow-hidden p-3">
-              <div className="flex flex-1 flex-col gap-3 overflow-hidden">
-                <div className="rounded-lg border border-border bg-card">
+            {activeView === 'analyzer' && (
+              <div className="flex flex-1 gap-3 overflow-hidden p-3">
+                <div className="flex flex-1 flex-col gap-3 overflow-hidden">
                   <ChartPanel />
-                </div>
 
-                <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
-                  <div className="border-b border-border px-3 py-2">
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                      Klasör İçeriği
-                    </span>
+                  <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
+                    <div className="border-b border-border px-3 py-2">
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                        Klasör İçeriği
+                      </span>
+                    </div>
+                    <ScrollArea className="flex-1">
+                      <FolderTable />
+                    </ScrollArea>
                   </div>
-                  <ScrollArea className="flex-1">
-                    <FolderTable />
-                  </ScrollArea>
                 </div>
               </div>
-            </div>
+            )}
+            {activeView === 'duplicates' && <DuplicateFinder />}
+            {activeView === 'old-files' && <OldFileDetective />}
           </div>
         </div>
       )}

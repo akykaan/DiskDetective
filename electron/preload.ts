@@ -66,12 +66,16 @@ export interface CompareResult {
 export interface ElectronAPI {
   selectFolder: () => Promise<string | null>
   scanFolder: (path: string) => Promise<FileNode>
-  compareFolders: (leftPath: string, rightPath: string) => Promise<CompareResult>
+  compareFolders: (leftPath: string, rightPath: string, ignoreUnnecessary: boolean) => Promise<CompareResult>
+  cancelCompare: () => void
   getSystemPath: (name: string) => Promise<string | null>
   onScanProgress: (callback: (data: ProgressPayload) => void) => () => void
   onCompareProgress: (callback: (data: CompareProgress) => void) => () => void
-  openInExplorer: (path: string) => void
+  openInExplorer: (paths: string | string[]) => Promise<boolean>
   windowControl: (action: 'minimize' | 'maximize' | 'close') => void
+  hashFiles: (paths: string[]) => Promise<Record<string, string>>
+  deleteItems: (paths: string[]) => Promise<boolean>
+  exportData: (data: string, defaultName: string) => Promise<boolean>
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -99,4 +103,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   windowControl: (action: 'minimize' | 'maximize' | 'close') => {
     ipcRenderer.send('window-control', action)
   },
+  hashFiles: (paths: string[]) => ipcRenderer.invoke('hash-files', paths),
+  deleteItems: (paths: string[]) => ipcRenderer.invoke('delete-items', paths),
+  exportData: (data: string, defaultName: string) => ipcRenderer.invoke('export-data', data, defaultName),
 })

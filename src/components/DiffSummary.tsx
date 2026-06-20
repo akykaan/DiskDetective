@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { ArrowLeftRight, FolderMinus, FolderPlus, AlertTriangle, CheckCircle2, FileWarning } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { useCompareStore } from '@/store/useCompareStore'
+import { useI18nStore } from '@/store/useI18nStore'
 import { formatBytes } from '@/lib/utils'
 
 const COLORS = {
@@ -58,29 +59,31 @@ interface CustomTooltipProps {
 }
 
 const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
+  const { t } = useI18nStore()
   if (!active || !payload || payload.length === 0) return null
   const data = payload[0]
   return (
     <div className="rounded-md border bg-card px-3 py-2 text-xs shadow-md">
       <p className="font-medium text-foreground">{data.payload?.name}</p>
-      <p className="text-muted-foreground">{data.value} dosya</p>
+      <p className="text-muted-foreground">{data.value} {t('files_scanned_count')}</p>
     </div>
   )
 }
 
 const DiffSummary: React.FC = () => {
   const { compareResult, filter, setFilter } = useCompareStore()
+  const { t } = useI18nStore()
 
   const chartData = useMemo(() => {
     if (!compareResult) return []
     const { summary } = compareResult
     return [
-      { name: 'Sadece Sol', value: summary.onlyLeft, color: COLORS.onlyLeft },
-      { name: 'Sadece Sağ', value: summary.onlyRight, color: COLORS.onlyRight },
-      { name: 'Boyut Farklı', value: summary.sizeDiff, color: COLORS.sizeDiff },
-      { name: 'Aynı', value: summary.identical, color: COLORS.identical },
+      { name: t('diff_tabs.only_left'), value: summary.onlyLeft, color: COLORS.onlyLeft },
+      { name: t('diff_tabs.only_right'), value: summary.onlyRight, color: COLORS.onlyRight },
+      { name: t('diff_tabs.size_diff'), value: summary.sizeDiff, color: COLORS.sizeDiff },
+      { name: t('diff_tabs.identical'), value: summary.identical, color: COLORS.identical },
     ].filter((d) => d.value > 0)
-  }, [compareResult])
+  }, [compareResult, t])
 
   if (!compareResult) return null
 
@@ -95,7 +98,7 @@ const DiffSummary: React.FC = () => {
       <div className="rounded-lg border border-border bg-card p-3">
         <div className="flex items-center justify-between mb-2">
           <div className="text-xs text-muted-foreground">
-            Sol: <span className="text-foreground font-medium">{formatBytes(totalLeft)}</span>
+            {t('left')}: <span className="text-foreground font-medium">{formatBytes(totalLeft)}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <ArrowLeftRight size={12} className="text-muted-foreground" />
@@ -104,7 +107,7 @@ const DiffSummary: React.FC = () => {
             </span>
           </div>
           <div className="text-xs text-muted-foreground">
-            Sağ: <span className="text-foreground font-medium">{formatBytes(totalRight)}</span>
+            {t('right')}: <span className="text-foreground font-medium">{formatBytes(totalRight)}</span>
           </div>
         </div>
         <div className="flex h-2 rounded-full overflow-hidden bg-secondary">
@@ -131,7 +134,7 @@ const DiffSummary: React.FC = () => {
       <div className="flex gap-3">
         <div className="grid grid-cols-2 gap-2 flex-1 xl:grid-cols-4">
           <StatCard
-            label="Sadece Sol"
+            label={t('diff_tabs.only_left')}
             value={summary.onlyLeft}
             subValue={summary.onlyLeftSize > 0 ? formatBytes(summary.onlyLeftSize) : undefined}
             icon={<FolderMinus size={14} />}
@@ -140,7 +143,7 @@ const DiffSummary: React.FC = () => {
             onClick={() => setFilter(filter === 'only-left' ? 'all' : 'only-left')}
           />
           <StatCard
-            label="Sadece Sağ"
+            label={t('diff_tabs.only_right')}
             value={summary.onlyRight}
             subValue={summary.onlyRightSize > 0 ? formatBytes(summary.onlyRightSize) : undefined}
             icon={<FolderPlus size={14} />}
@@ -149,7 +152,7 @@ const DiffSummary: React.FC = () => {
             onClick={() => setFilter(filter === 'only-right' ? 'all' : 'only-right')}
           />
           <StatCard
-            label="Boyut Farklı"
+            label={t('diff_tabs.size_diff')}
             value={summary.sizeDiff}
             subValue={summary.sizeDiffSize > 0 ? formatBytes(summary.sizeDiffSize) : undefined}
             icon={<AlertTriangle size={14} />}
@@ -158,7 +161,7 @@ const DiffSummary: React.FC = () => {
             onClick={() => setFilter(filter === 'size-diff' ? 'all' : 'size-diff')}
           />
           <StatCard
-            label="Aynı"
+            label={t('diff_tabs.identical')}
             value={summary.identical}
             icon={<CheckCircle2 size={14} />}
             color={COLORS.identical}
